@@ -2,6 +2,7 @@ import mongodb from 'mongodb'
 
 export default class Database{
     _client;
+    _db;
 
     constructor(connectionString){
         this._client = new mongodb.MongoClient(connectionString, {useNewUrlParser: true, useUnifiedTopology: true});
@@ -11,6 +12,7 @@ export default class Database{
         return new Promise((resolve, reject) => {
             if(!this._client.isConnected()){
                 this._client.connect().then(() => {
+                    this._db = this._client.db();
                     resolve(true);
                 }).catch(err => {
                     reject(err);
@@ -18,7 +20,7 @@ export default class Database{
             }else{
                 resolve(true);
             }
-        })
+        });
     }
 
     closeConnection = () => {
@@ -33,38 +35,48 @@ export default class Database{
             }else{
                 resolve(true);
             }
-        })
+        });
+    }
+
+    getCurrentDatabaseName = () => {
+        return new Promise((resolve, reject) => {
+           try{
+               resolve(this._db.databaseName);
+           } catch(err){
+               reject(err);
+           }
+        });
+    }
+
+    useDatabase = (databaseName) => {
+        return new Promise(async (resolve, reject) => {
+            try{
+                this._db = this._client.db(databaseName);
+
+                if(this._db.databaseName === databaseName){
+                    resolve();
+                }else{
+                    throw new Error("Troca de banco de dados vigente falhou!");
+                }
+            } catch(err){
+                reject(err);
+            }
+        });
     }
 
     checkAllCollections = () => {
         return new Promise(async (resolve, reject) => {
-            this._client.db().listCollections({}).toArray().then(array => {
+            this._db.listCollections({}).toArray().then(array => {
                 resolve(array);
             }).catch(async err => {
                 reject(err);
             });
-
-        })
-    }
-
-    getCollection = (collectionName) => {
-        return new Promise(async (resolve, reject) => {
-            if(!this._client.isConnected()){
-                try{
-                    await this._client.connect();
-                }catch(err){
-                    reject(err);
-                }
-            }
-
-            const collection = this._client.db().collection(collectionName);
-            resolve(collection);
-        })
+        });
     }
 
     createCollection = (collectionName, options) => {
         return new Promise(async (resolve, reject) => {
-            this._client.db().createCollection(collectionName, options).then(result => {
+            this._db.createCollection(collectionName, options).then(result => {
                 resolve(result);
             }).catch(async err => {
                 reject(err);
@@ -74,52 +86,24 @@ export default class Database{
 
     dropCollection = (collectionName) => {
         return new Promise((resolve, reject) => {
-            this._client.db().collection(collectionName).drop().then(result => {
+            this._db.collection(collectionName).drop().then(result => {
                 resolve(result);
             }).catch(err => {
-                reject(err);
-            });
-        });
-    }
-
-    dropDatabase = (databaseName) => {
-        return new Promise((resolve, reject) => {
-            this._client.db().dropDatabase(databaseName).then(result => {
-                resolve(result);
-            }).catch(err => {
-                reject(err);
-            });
-        });
-    }
-
-    bulkWrite = (collectionName, operations) => {
-        return new Promise(async (resolve, reject) => {
-            if(!this._client.isConnected()){
-                try{
-                    await this._client.connect();
-                }catch(err){
-                    reject(err);
-                }
-            }
-
-            this._client.db().collection(collectionName).bulkWrite(operations).then(result => {
-                resolve(result);
-            }).catch(async err => {
                 reject(err);
             });
         });
     }
 
     query = (collectionName, filter, options) => {
-        let projectionObject = {};
-
-        if(options){
-            if(options.projection){
-                projectionObject = {projection : options.projection};
-            }
-        }
-
         return new Promise(async (resolve, reject) => {
+            let projectionObject = {};
+
+            if(options){
+                if(options.projection){
+                    projectionObject = {projection : options.projection};
+                }
+            }
+
             if(filter){
                 if(filter._id){
                     const idString = filter._id;
@@ -130,7 +114,7 @@ export default class Database{
             }
 
             try{
-                let results = this._client.db().collection(collectionName).find(filter, projectionObject);
+                let results = this._db.collection(collectionName).find(filter, projectionObject);
 
                 if(options){
                     if(options.sort){
@@ -149,28 +133,9 @@ export default class Database{
         });
     }
 
-    distinctQuery = (collectionName, keyFieldName, queryFields) => {
-        return new Promise(async (resolve, reject) => {
-            if(!this._client.isConnected()){
-                try{
-                    await this._client.connect();
-                }catch(err){
-                    reject(err);
-                }
-            }
-
-
-            this._client.db().collection(collectionName).distinct(keyFieldName, queryFields).then(async results => {
-                resolve(results);
-            }).catch(err => {
-                reject(err);
-            });
-        });
-    }
-
     insertOne = (collectionName, document) => {
         return new Promise(async (resolve, reject) => {
-            this._client.db().collection(collectionName).insertOne(document).then(result => {
+            this._db.collection(collectionName).insertOne(document).then(result => {
                 resolve(result);
             }).catch(async err => {
                 reject(err);
@@ -180,14 +145,6 @@ export default class Database{
 
     updateOne = (collectionName, filter, updateObject) => {
         return new Promise(async (resolve, reject) => {
-            if(!this._client.isConnected()){
-                try{
-                    await this._client.connect();
-                }catch(err){
-                    reject(err);
-                }
-            }
-
             this._client.db().collection(collectionName).updateOne(filter, {$set : updateObject}).then(result => {
                 resolve(result);
             }).catch(err => {
@@ -268,7 +225,7 @@ export default class Database{
 
     createIndex = (collectionName, fieldsToIndex, options) => {
         return new Promise((resolve, reject) => {
-            this._client.db().collection(collectionName).createIndex(fieldsToIndex, options).then(result => {
+            this._db.collection(collectionName).createIndex(fieldsToIndex, options).then(result => {
                 resolve(result);
             }).catch(err => {
                 reject(err);
@@ -278,7 +235,7 @@ export default class Database{
 
     dropIndex = (indexName) => {
         return new Promise((resolve, reject) => {
-            this._client.db().collection(collectionName).dropIndex(indexName).then(result => {
+            this._db.collection(collectionName).dropIndex(indexName).then(result => {
                 resolve(result);
             }).catch(err => {
                 reject(err);
@@ -288,7 +245,7 @@ export default class Database{
 
     indexesInformation = (collectionName, options) => {
         return new Promise((resolve, reject) => {
-            this._client.db().collection(collectionName).indexInformation(options).then(result => {
+            this._db.collection(collectionName).indexInformation(options).then(result => {
                 resolve(result);
             }).catch(err => {
                 reject(err);
