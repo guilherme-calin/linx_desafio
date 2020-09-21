@@ -2,14 +2,17 @@ import Database from '../src/services/Database.js'
 import mocha from 'mocha';
 import chai  from 'chai'
 
+const describe = mocha.describe;
+const it = mocha.it;
 const expect = chai.expect;
 const assert = chai.assert;
 
-const string = "mongodb+srv://admin-user:hellfire@igtifullstack-cluster.0zwl0.gcp.mongodb.net/linx_part1?retryWrites=true&w=majority";
-const db = new Database(string);
+const dbConnectionString = process.env.MONGODB_CONNSTRING;
+const db = new Database(dbConnectionString);
+
+const databaseName = "guilherme_calin_linx_desafio";
 const collectionName = "request";
 const requiredFieldNames = ["requestHash", "requestDate"];
-
 const collectionSchema = {
     validator: {
         $jsonSchema: {
@@ -29,8 +32,6 @@ const collectionSchema = {
     }
 }
 
-
-
 describe("Testes do serviço de acesso ao banco de dados mongodb, referente à classe Database", function(){
     let connectionOpened;
 
@@ -43,6 +44,23 @@ describe("Testes do serviço de acesso ao banco de dados mongodb, referente à c
                 connectionOpened = false;
                 assert.fail("Erro na conexão com o banco de dados", "Sucesso na conexão", err.message);
             }
+        });
+    });
+
+    describe("Validação do banco de dados vigente", async function(){
+       it(`Caso não tenha sido informado o banco de dados na string de conexão,
+       altere o banco de dados vigente para ${databaseName}.`, async function(){
+           const currentDatabaseName = await db.getCurrentDatabaseName();
+
+           console.log(currentDatabaseName);
+
+           if(currentDatabaseName === "test"){
+               try{
+                   await db.useDatabase(databaseName);
+               }catch(err){
+                   assert.fail(err.message);
+               }
+           }
         });
     });
 
@@ -426,7 +444,7 @@ describe("Testes do serviço de acesso ao banco de dados mongodb, referente à c
             }
         });
 
-        it(`Deve listar três documentos na collection ${collectionName}`, async function(){
+        it(`Deve listar quatro documentos na collection ${collectionName}`, async function(){
            let documents = [
                {
                    requestHash : "F1A7BE",
