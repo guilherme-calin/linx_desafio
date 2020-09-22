@@ -9,8 +9,8 @@
   },
   "scripts": {
     "test-database": "mocha --experimental-modules ./test/Database.test.js --timeout 10000",
-    "test-productapi" : "mocha --experimental-modules ./test/ProductApi.test.js --timeout 10000",
-    "test-gbrequest" : "node --experimental-modules ./test/gbrequest.test.js",
+    "test-productapi": "mocha --experimental-modules ./test/ProductApi.test.js --timeout 10000",
+    "rest_api-test": "mocha --experimental-modules test/rest_api.test.js --timeout 100000",
     "start": "node --experimental-modules ./src/main.js",
     "dev": "nodemon --experimental-modules ./src/main.js"
   },
@@ -20,6 +20,7 @@
   "author": "Guilherme Suardi Calin",
   "license": "ISC",
   "dependencies": {
+    "axios": "^0.20.0",
     "body-parser": "^1.19.0",
     "chai": "^4.2.0",
     "express": "^4.17.1",

@@ -7,6 +7,7 @@ const it = mocha.it;
 const expect = chai.expect;
 const assert = chai.assert;
 
+const environment = process.env.NODEJS_APP_ENVIRONMENT === "production" ? process.env.NODEJS_APP_ENVIRONMENT : "development";
 const dbConnectionString = process.env.MONGODB_CONNSTRING;
 const db = new Database(dbConnectionString);
 
@@ -58,13 +59,29 @@ describe("Suite de testes do serviço de acesso ao banco de dados MongoDB, refer
     describe("Validação do banco de dados vigente", async function(){
        it(`Caso não tenha sido informado o banco de dados na string de conexão,
        altere o banco de dados vigente para ${databaseName}.`, async function(){
-           const currentDatabaseName = await db.getCurrentDatabaseName();
+           let currentDatabaseName = await db.getCurrentDatabaseName();
 
-           if(currentDatabaseName === "test"){
+           if(environment !== "production"){
+               let newDatabaseName;
+
+               if(currentDatabaseName === "test"){
+                   newDatabaseName = databaseName + "-test";
+               }else{
+                   newDatabaseName = currentDatabaseName + "-test";
+               }
+
                try{
-                   await db.useDatabase(databaseName);
+                   await db.useDatabase(newDatabaseName);
                }catch(err){
                    assert.fail(err.message);
+               }
+           }else{
+               if(currentDatabaseName === "test"){
+                   try{
+                       await db.useDatabase(databaseName);
+                   }catch(err){
+                       assert.fail(err.message);
+                   }
                }
            }
         });
@@ -498,7 +515,7 @@ describe("Suite de testes do serviço de acesso ao banco de dados MongoDB, refer
 
            let insertResult;
            try{
-               insertResult = Promise.all(promises);
+               insertResult = await Promise.all(promises);
            }catch(err){
                assert.fail("Erro ao inserir documentos para teste!");
            }
@@ -582,7 +599,7 @@ describe("Suite de testes do serviço de acesso ao banco de dados MongoDB, refer
             }catch(err){
                 assert.fail(err.message);
             }
-        })
+        });
     });
 
     describe("Encerramento de conexão com o banco de dados", function(){
