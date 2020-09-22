@@ -9,6 +9,7 @@
   },
   "scripts": {
     "test-database": "mocha --experimental-modules ./test/Database.test.js --timeout 10000",
+    "test-gbrequest" : "node --experimental-modules ./test/gbrequest.test.js",
     "start": "node --experimental-modules ./src/main.js",
     "dev": "nodemon --experimental-modules ./src/main.js"
   },
@@ -18,6 +19,7 @@
   "author": "Guilherme Suardi Calin",
   "license": "ISC",
   "dependencies": {
+    "body-parser": "^1.19.0",
     "chai": "^4.2.0",
     "express": "^4.17.1",
     "mocha": "^8.1.3",

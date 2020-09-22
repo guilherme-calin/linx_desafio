@@ -30,7 +30,7 @@ export default class Database{
                     await this._client.close();
                     resolve(true);
                 }catch(err) {
-                    reject(err)
+                    reject(err);
                 }
             }else{
                 resolve(true);
@@ -233,7 +233,7 @@ export default class Database{
         });
     }
 
-    dropIndex = (indexName) => {
+    dropIndex = (collectionName, indexName) => {
         return new Promise((resolve, reject) => {
             this._db.collection(collectionName).dropIndex(indexName).then(result => {
                 resolve(result);

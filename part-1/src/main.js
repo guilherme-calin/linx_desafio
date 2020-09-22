@@ -1,28 +1,84 @@
 import Database from "./services/Database.js";
+import express from 'express'
+import bodyParser from 'body-parser'
+import ProductApi from "./services/ProductApi.js";
 
-let string = "mongodb+srv://admin-user:hellfire@igtifullstack-cluster.0zwl0.gcp.mongodb.net/linx_part1?retryWrites=true&w=majority";
-let db = new Database(string);
-
+const dbConnectionString = process.env.MONGODB_CONNSTRING;
+const db = new Database(dbConnectionString);
+const api = new ProductApi(db);
+const app = express();
+const serverPort = process.env.API_PORT || 3001;
+let server = null;
 
 process.on("SIGINT", async () => {
-    console.log("on SIGINT!");
+    server.close();
     await db.closeConnection();
 });
 
 process.on("SIGTERM", async () => {
-    console.log("on SIGTERM!");
+    server.close();
     await db.closeConnection();
 });
 
+if(!dbConnectionString){
+    console.log("A variável de ambiente MONGODB_CONNSTRING é obrigatória! Informe a variável e inicie o processo novamente.")
+    process.kill(process.pid, "SIGTERM");
+}
+
 db.openConnection().then(async () => {
     try{
-        let result = await db.dropCollection("request");
-        console.log(result);
+        await api.prepareDatabaseForApi();
     }catch(err){
-        console.log(err);
-        setTimeout(() => true, 3000);
+        console.log(err.message);
         process.kill(process.pid, "SIGTERM");
     }
+
+    app.use(bodyParser.raw({
+        type: "*/*",
+        limit: "2gb"
+    }));
+
+    app.disable("x-powered-by");
+
+    app.use((_, res, next) => {
+        res.setHeader("Access-Control-Allow-Origin" , "*");
+
+        next();
+    });
+
+    app.post('/v1/products', api.updateProductsInformation);
+    app.options("*", (_, res) => {
+        let responseBody = {
+            sucess : true,
+            message : "Options ok!"
+        }
+
+        res.writeHead(200, {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Headers" : "Content-Type, Content-Length, Accept",
+            "Access-Control-Allow-Methods" : "POST",
+            "Content-Length": Buffer.from(JSON.stringify(responseBody)).length
+        });
+
+        res.end(JSON.stringify(responseBody));
+    });
+    app.all("*", (_,res) => {
+        let responseBody = {
+            sucess : false,
+            message : "Método e/ou rota não encontrado!"
+        }
+
+        res.writeHead(404, {
+            "Content-Type": "application/json",
+            "Content-Length": Buffer.from(JSON.stringify(responseBody)).length
+        });
+
+        res.end(JSON.stringify(responseBody));
+    });
+
+    server = app.listen(serverPort, () => {
+        console.log(`Servidor escutando na porta ${serverPort}`);
+    });
 }).catch(err => {
     console.log(err);
 });

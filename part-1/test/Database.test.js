@@ -245,7 +245,7 @@ describe("Testes do serviço de acesso ao banco de dados mongodb, referente à c
     describe("Índices de collection", function(){
        let collectionList;
        let indexCreated = false;
-
+       let indexName = "";
        const fieldName = "requestDate";
        const ordering = "ASC";
        const fieldObjectToIndex = {
@@ -323,6 +323,8 @@ describe("Testes do serviço de acesso ao banco de dados mongodb, referente à c
            expect(index).to.have.property("expireAfterSeconds");
 
            indexCreated = true;
+
+           indexName = index.name;
        });
 
        it(`Não deve falhar em criar um índice já existente no campo ${fieldName} com as mesmas opções`, async function(){
@@ -350,6 +352,20 @@ describe("Testes do serviço de acesso ao banco de dados mongodb, referente à c
                 result = await db.createIndex(collectionName, fieldObjectToIndex);
                 assert.fail(err.message);
             }catch(err){}
+        });
+
+        it(`Deve ter sucesso ao excluir o índice TTL criado no campo ${fieldName}`, async function(){
+            if(!indexCreated){
+                assert.fail(`Condição inicial do teste não foi cumprida! O índice TTL não existe!`);
+            }
+
+            let result;
+
+            try{
+                result = await db.dropIndex(collectionName, indexName);
+            }catch(err){
+                assert.fail(err.message);
+            }
         });
     });
 
@@ -553,6 +569,14 @@ describe("Testes do serviço de acesso ao banco de dados mongodb, referente à c
             expect(documentList).to.be.an("array");
             expect(documentList.length).to.equal(0);
         });
+
+        after(async function(){
+            try{
+                await db.dropCollection(collectionName);
+            }catch(err){
+                assert.fail(err.message);
+            }
+        })
     });
 
     describe("Encerramento de conexão com o banco de dados", function(){

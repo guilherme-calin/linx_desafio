@@ -1,0 +1,30 @@
+
+ # PORTUGUÊS(BRASILEIRO)
+ # Esse arquivo contém as informações de quais variáveis de ambiente são consideradas
+ # para o funcionamento do projeto, e exemplos de valores para cada uma.
+ # As variáveis de ambiente obrigatórias possuem a chave "mandatory" setada para true, e as
+ # não-obrigatórias possuem a chave "mandatory" setada para false.
+ # Caso haja um valor padrão para alguma variável, ela será informada na chave "default".
+ # Exemplos de valores são informados na chave "example".
+
+ # ENGLISH
+ # This file contains information about the necessary and optional environment variables for this project,
+ # along with value examples for each one.
+ # The mandatory variables contain the "mandatory" key set to true, while the optional ones contain the "mandatory" key set to false.
+ # Default values for a variable, if there´s any, are included in the "default" key.
+ # Value examples are shown in the "example" key.
+
+ MONGODB_CONNSTRING:
+   mandatory: true
+   example: mongodb+srv://admin-user:strongpassword@my-cluster.0zwl0.gcp.mongodb.net/linx_part1?retryWrites=true&w=majority
+   description_ptbr: String de conexão para banco de dados MongoDB.
+   description_en: MongoDB database connection string.
+ API_PORT:
+   mandatory: false
+   default: 3000
+   example: 3000
+   description_ptbr: Porta de conexão para a API REST do projeto.
+   description_en: Project´s REST API port to listen to.
+
+
+
