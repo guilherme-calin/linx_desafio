@@ -47,16 +47,17 @@ db.openConnection().then(async () => {
     });
 
     app.post('/v1/products', api.updateProductsInformation);
+    app.delete('/reset', api.resetApi);
     app.options("*", (_, res) => {
         let responseBody = {
-            sucess : true,
+            success : true,
             message : "Options ok!"
         }
 
         res.writeHead(200, {
             "Content-Type": "application/json",
             "Access-Control-Allow-Headers" : "Content-Type, Content-Length, Accept",
-            "Access-Control-Allow-Methods" : "POST",
+            "Access-Control-Allow-Methods" : "POST, DELETE",
             "Content-Length": Buffer.from(JSON.stringify(responseBody)).length
         });
 
@@ -64,7 +65,7 @@ db.openConnection().then(async () => {
     });
     app.all("*", (_,res) => {
         let responseBody = {
-            sucess : false,
+            success : false,
             message : "Método e/ou rota não encontrado!"
         }
 

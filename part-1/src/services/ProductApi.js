@@ -12,7 +12,7 @@ export default class ProductApi{
 
     prepareDatabaseForApi = () => {
         return new Promise(async  (resolve, reject) => {
-            const currentDatabaseName = await this._database.getCurrentDatabaseName();
+            const environment = process.env.NODEJS_APP_ENVIRONMENT === "production" ? process.env.NODEJS_APP_ENVIRONMENT : "development";
             const collectionName = "request";
             const requiredFieldNames = ["requestHash", "requestDate"];
             const collectionSchema = {
@@ -42,12 +42,31 @@ export default class ProductApi{
                 expireAfterSeconds: 600
             }
 
-            //Valida o banco vigente para utilização
-            if(currentDatabaseName === "test"){
+            let currentDatabaseName = await this._database.getCurrentDatabaseName();
+
+            //Valida o banco vigente para utilização.
+            //Se o ambiente não houver sido declarado como produção, utilize o sufixo -test no banco de dados utilizado
+            if(environment !== "production"){
+                let newDatabaseName;
+
+                if(currentDatabaseName === "test"){
+                    newDatabaseName = databaseName + "-test";
+                }else{
+                    newDatabaseName = currentDatabaseName + "-test";
+                }
+
                 try{
-                    await db.useDatabase(databaseName);
+                    await this._database.useDatabase(newDatabaseName);
                 }catch(err){
-                    assert.fail(err.message);
+                    reject(new Error("Erro ao preparar a API para inicialização!\n" + err.message));
+                }
+            }else{
+                if(currentDatabaseName === "test"){
+                    try{
+                        await this._database.useDatabase(databaseName);
+                    }catch(err){
+                        reject(new Error("Erro ao preparar a API para inicialização!\n" + err.message));
+                    }
                 }
             }
             //**************************************
@@ -121,6 +140,123 @@ export default class ProductApi{
         });
     }
 
+    resetApi = (req, res) => {
+        return new Promise(async (resolve, reject) => {
+            const environment = process.env.NODEJS_APP_ENVIRONMENT === "production" ? process.env.NODEJS_APP_ENVIRONMENT : "development";
+
+            if(environment === "production"){
+                this.errorHandler(res, new HttpError("Operação proibida em ambiente de produção!", 403));
+                return;
+            }
+
+            const collectionName = "request";
+            const requiredFieldNames = ["requestHash", "requestDate"];
+            const collectionSchema = {
+                validator: {
+                    $jsonSchema: {
+                        bsonType: "object",
+                        required: requiredFieldNames,
+                        properties: {
+                            requestHash: {
+                                bsonType: "string",
+                                description: "Hash alfanumérica da requisição, composta por diversas informações como IP, tipo MIME do body, quantidade de bytes do body etc."
+                            },
+                            requestDate: {
+                                bsonType: "date",
+                                description: "Data da requisição. Utilizada em conjunto com um índice TTL a fim de bloquear requisições repetidas em um curto espaço de tempo."
+                            }
+                        }
+                    }
+                }
+            }
+            const fieldNameToIndex = "requestDate";
+            const ordering = "ASC";
+            const fieldObjectToIndex = {
+                [fieldNameToIndex] : ordering === "ASC" ? 1 : -1
+            };
+            const indexOptions = {
+                expireAfterSeconds: 600
+            }
+
+            let currentDatabaseName = await this._database.getCurrentDatabaseName();
+
+            //Valida o banco vigente para utilização.
+            //Utiliza o sufixo -test no banco de dados utilizado
+            let newDatabaseName = currentDatabaseName;
+
+            if(currentDatabaseName === "test"){
+                newDatabaseName = databaseName + "-test";
+            }else{
+                if(!currentDatabaseName.includes("-test")){
+                    newDatabaseName = currentDatabaseName + "-test";
+                }
+            }
+
+            try{
+                await this._database.useDatabase(newDatabaseName);
+            }catch(err){
+                console.log(err.message);
+                this.errorHandler(res, new HttpError("Erro ao preparar API para reinicialização!"));
+                return;
+            }
+            //**************************************
+
+            //Recria a collection
+            let collectionList;
+
+            try{
+                collectionList = await this._database.checkAllCollections();
+            }catch(err){
+                console.log(err.message);
+                this.errorHandler(res, new HttpError("Erro ao preparar API para reinicialização!"));
+                return;
+            }
+
+            let found = collectionList.find(element => element.name === collectionName && element.type === "collection");
+
+            if(found){
+                try{
+                    await this._database.dropCollection(collectionName);
+                }catch(err){
+                    console.log(err.message);
+                    this.errorHandler(res, new HttpError("Erro ao preparar API para reinicialização!"));
+                    return;
+                }
+            }
+
+            try{
+                await this._database.createCollection(collectionName, collectionSchema);
+            }catch(err){
+                console.log(err.message);
+                this.errorHandler(res, new HttpError("Erro ao preparar API para reinicialização!"));
+                return;
+            }
+            //**************************************
+
+            //Cria o índice TTL
+            try{
+                await this._database.createIndex(collectionName, fieldObjectToIndex, indexOptions);
+            }catch(err){
+                console.log(err.message);
+                this.errorHandler(res, new HttpError("Erro ao preparar API para reinicialização!"));
+                return;
+            }
+            //**************************************
+
+            let responseBody = {
+                success : true,
+                message : "Reinicialização da API realizada com sucesso!"
+            }
+
+            res.writeHead(200, {
+                "Content-Type": "application/json",
+                "Content-Length": Buffer.from(JSON.stringify(responseBody)).length
+            });
+
+            res.end(JSON.stringify(responseBody));
+        });
+    }
+
     updateProductsInformation = (req, res) => {
         return new Promise(async (resolve, reject) => {
             let alphaHash = "";
@@ -157,7 +293,7 @@ export default class ProductApi{
             //Endpoint atualiza os dados do produto conforme enunciado do desafio
 
             let responseBody = {
-                sucess : true,
+                success : true,
                 message : "Atualização de informações do produto realizada com sucesso!"
             }
 
@@ -172,7 +308,7 @@ export default class ProductApi{
 
     errorHandler = (res, httpError) => {
         let responseBody = {
-            sucess : false,
+            success : false,
             message : httpError.message
         }
 
