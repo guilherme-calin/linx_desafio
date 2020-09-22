@@ -19,12 +19,24 @@
    example: mongodb+srv://admin-user:strongpassword@my-cluster.0zwl0.gcp.mongodb.net/linx_part1?retryWrites=true&w=majority
    description_ptbr: String de conexão para banco de dados MongoDB.
    description_en: MongoDB database connection string.
+ API_HOST:
+   mandatory: false
+   default: localhost
+   example: 192.168.100.201
+   description_ptbr: Host de conexão para a API REST do projeto.
+   description_en: Project´s REST API host to connect to.
  API_PORT:
    mandatory: false
    default: 3000
    example: 3000
    description_ptbr: Porta de conexão para a API REST do projeto.
-   description_en: Project´s REST API port to listen to.
+   description_en: Project´s REST API port to connect/listen to.
+ NODEJS_APP_ENVIRONMENT:
+   mandatory: false
+   default: development
+   example: production
+   description_prbr: Indica o ambiente de execução da aplicação. Para ambiente de produção, ele deve ser explícitamente informado como production
+   description_en: Differentiates between production and development environments. For production environment, it´s value must be explicitly set to "production"
 
 
 
