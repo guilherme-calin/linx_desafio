@@ -51,9 +51,10 @@ export default class Database{
     useDatabase = (databaseName) => {
         return new Promise(async (resolve, reject) => {
             try{
-                this._db = this._client.db(databaseName);
+                let newDatabase = this._client.db(databaseName);
 
-                if(this._db.databaseName === databaseName){
+                if(newDatabase.databaseName === databaseName){
+                    this._db = newDatabase;
                     resolve();
                 }else{
                     throw new Error("Troca de banco de dados vigente falhou!");
