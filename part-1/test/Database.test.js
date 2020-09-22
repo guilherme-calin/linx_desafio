@@ -32,8 +32,16 @@ const collectionSchema = {
     }
 }
 
-describe("Testes do serviço de acesso ao banco de dados mongodb, referente à classe Database", function(){
+describe("Suite de testes do serviço de acesso ao banco de dados MongoDB, referente à classe Database", function(){
     let connectionOpened;
+
+    describe("Checagem de variáveis de ambiente obrigatórias ", function(){
+        it(`Variável de ambiente MONGODB_CONNSTRING deve existir no ambiente`, function(){
+           if(!dbConnectionString){
+               assert.fail("Variável não existe! Configure o ambiente e tente novamente.");
+           }
+        });
+    });
 
     describe("Abertura de conexão ao banco de dados", function(){
         it("Abertura de conexão deve ser realizada com sucesso.", async function(){
@@ -51,8 +59,6 @@ describe("Testes do serviço de acesso ao banco de dados mongodb, referente à c
        it(`Caso não tenha sido informado o banco de dados na string de conexão,
        altere o banco de dados vigente para ${databaseName}.`, async function(){
            const currentDatabaseName = await db.getCurrentDatabaseName();
-
-           console.log(currentDatabaseName);
 
            if(currentDatabaseName === "test"){
                try{
@@ -252,7 +258,7 @@ describe("Testes do serviço de acesso ao banco de dados mongodb, referente à c
            [fieldName] : ordering === "ASC" ? 1 : -1
        };
        const indexOptions = {
-           expireAfterSeconds: 60
+           expireAfterSeconds: 600
        }
 
        before(async function(){
