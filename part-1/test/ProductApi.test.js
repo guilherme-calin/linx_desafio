@@ -1,12 +1,16 @@
 import Database from "../src/services/Database.js";
 import ProductApi from "../src/services/ProductApi.js";
+import loadEnvironmentVariablesIfAny from "../src/load_env.js";
 import mocha from 'mocha';
 import chai  from 'chai'
+
 
 const describe = mocha.describe;
 const it = mocha.it;
 const expect = chai.expect;
 const assert = chai.assert;
+
+loadEnvironmentVariablesIfAny();
 
 const productApi = new ProductApi(new Database(process.env.MONGODB_CONNSTRING));
 

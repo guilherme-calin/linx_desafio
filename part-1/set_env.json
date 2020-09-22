@@ -1,0 +1,6 @@
+{
+  "NODEJS_APP_ENVIRONMENT" : "",
+  "NODEJS_API_PORT" : 0,
+  "NODEJS_API_HOST" : "",
+  "MONGODB_CONNSTRING" : ""
+}

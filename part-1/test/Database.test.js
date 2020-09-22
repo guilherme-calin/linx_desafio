@@ -1,11 +1,14 @@
 import Database from '../src/services/Database.js'
+import loadEnvironmentVariablesIfAny from '../src/load_env.js'
 import mocha from 'mocha';
-import chai  from 'chai'
+import chai  from 'chai';
 
 const describe = mocha.describe;
 const it = mocha.it;
 const expect = chai.expect;
 const assert = chai.assert;
+
+loadEnvironmentVariablesIfAny();
 
 const environment = process.env.NODEJS_APP_ENVIRONMENT === "production" ? process.env.NODEJS_APP_ENVIRONMENT : "development";
 const dbConnectionString = process.env.MONGODB_CONNSTRING;

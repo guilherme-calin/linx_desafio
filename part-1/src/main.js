@@ -1,13 +1,16 @@
 import Database from "./services/Database.js";
+import ProductApi from "./services/ProductApi.js";
 import express from 'express'
 import bodyParser from 'body-parser'
-import ProductApi from "./services/ProductApi.js";
+import loadEnvironmentVariablesIfAny from './load_env.js'
+
+loadEnvironmentVariablesIfAny();
 
 const dbConnectionString = process.env.MONGODB_CONNSTRING;
 const db = new Database(dbConnectionString);
 const api = new ProductApi(db);
 const app = express();
-const serverPort = process.env.API_PORT || 3001;
+const serverPort = process.env.NODEJS_API_PORT || 3001;
 let server = null;
 
 process.on("SIGINT", async () => {
