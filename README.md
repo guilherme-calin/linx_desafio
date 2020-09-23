@@ -183,7 +183,7 @@ A API REST pode retornar os seguintes códigos de status:
 - 404 - Não encontrado;
 - 500 - Erro interno do servidor.     
 
-### Testes automatizados
+### Testes Automatizados
 
 Os comandos abaixo são utilizados para testes automatizados, por meio das bibliotecas Mocha e Chai, são eles:
 ```bash
